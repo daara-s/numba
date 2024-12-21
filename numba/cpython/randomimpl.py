@@ -1708,18 +1708,24 @@ def poisson_impl2(lam, size):
     if isinstance(lam, (types.Float, types.Integer)) and is_empty_tuple(size):
         # Handle size = ()
         return lambda lam, size: np.array(np.random.poisson(lam))
+
+    def _impl(lam, size):
+        out = np.empty(size, dtype=np.intp)
+        out_flat = out.flat
+        for idx in range(out.size):
+            out_flat[idx] = np.random.poisson(lam)
+        return out
+
     if isinstance(lam, (types.Float, types.Integer)) and (
             isinstance(size, types.Integer) or
        (isinstance(size, types.UniTuple) and isinstance(size.dtype,
                                                         types.Integer))
     ):
-        def _impl(lam, size):
-            out = np.empty(size, dtype=np.intp)
-            out_flat = out.flat
-            for idx in range(out.size):
-                out_flat[idx] = np.random.poisson(lam)
-            return out
         return _impl
+    if isinstance(lam, (types.Float, types.Integer)) and (
+        isinstance(size, types.Tuple) and isinstance(size.dtype, types.Integer)
+        ):
+        return lambda lam, size: _impl(lam, np.prod(size)).reshape(size)
 
 
 @overload(np.random.power)
